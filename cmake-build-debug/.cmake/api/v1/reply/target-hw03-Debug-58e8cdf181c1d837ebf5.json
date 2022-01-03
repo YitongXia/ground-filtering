@@ -1,0 +1,194 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "hw03"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_executable",
+			"target_link_libraries",
+			"add_definitions",
+			"include_directories"
+		],
+		"files" : 
+		[
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 23,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 27,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 19,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 13,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX11.3.sdk"
+				},
+				{
+					"fragment" : "-std=gnu++17"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_ALL_NO_LIB"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "CGAL_USE_CORE=1"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "CGAL_USE_GMPXX=1"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "JSON_PARAMS_PATH=\"/Users/yitongxia/Desktop/Geomatics/ground filtering/hw/03/cpp/../data/params.json\""
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 4,
+					"path" : "/Users/yitongxia/Desktop/Geomatics/ground filtering/hw/03/cpp/external/nlohmann-json"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/yitongxia/Desktop/Geomatics/ground filtering/hw/03/cpp/external/LAStools/LASlib/src/../inc"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/Users/yitongxia/Desktop/Geomatics/ground filtering/hw/03/cpp/external/LAStools/LASlib/src/../../LASzip/src"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/opt/homebrew/include"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					2
+				],
+				"standard" : "17"
+			},
+			"sourceIndexes" : 
+			[
+				0,
+				1
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "LASlib::@a93980f074c36d0c5ec5"
+		}
+	],
+	"id" : "hw03::@6890427a1f51a3e7e1df",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "-g",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "../external/LAStools/LASlib/lib/libLASlib.a",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/opt/homebrew/lib/libgmpxx.dylib",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/opt/homebrew/lib/libmpfr.dylib",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "/opt/homebrew/lib/libgmp.dylib",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "hw03",
+	"nameOnDisk" : "hw03",
+	"paths" : 
+	{
+		"build" : ".",
+		"source" : "."
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/main.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/GroundFilter.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "EXECUTABLE"
+}

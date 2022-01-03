@@ -1,0 +1,85 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"external/LAStools/LASlib/src/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 109,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 113,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 114,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "lib/LASlib",
+			"paths" : 
+			[
+				"/Users/yitongxia/Desktop/Geomatics/ground filtering/hw/03/cpp/external/LAStools/LASlib/lib/libLASlib.a"
+			],
+			"targetId" : "LASlib::@a93980f074c36d0c5ec5",
+			"targetIndex" : 0,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/LASlib",
+			"exportName" : "laslib-targets",
+			"exportTargets" : 
+			[
+				{
+					"id" : "LASlib::@a93980f074c36d0c5ec5",
+					"index" : 0
+				}
+			],
+			"paths" : 
+			[
+				"external/LAStools/LASlib/src/CMakeFiles/Export/lib/cmake/LASlib/laslib-targets.cmake"
+			],
+			"type" : "export"
+		},
+		{
+			"backtrace" : 3,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/LASlib",
+			"paths" : 
+			[
+				"LASlib/src/laslib-config.cmake"
+			],
+			"type" : "file"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "external/LAStools/LASlib/src",
+		"source" : "external/LAStools/LASlib/src"
+	}
+}

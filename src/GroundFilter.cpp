@@ -50,6 +50,46 @@ void groundfilter_tin(const std::vector<Point>& pointcloud, const json& jparams)
   double distance = jparams["distance"];
   double angle = jparams["angle"];
   std::string output_las = jparams["output_las"];
+	typedef CGAL::Projection_traits_xy_3<Kernel>  Gt;
+  typedef CGAL::Delaunay_triangulation_2<Gt> DT;
+
+  double resolution = jparams["resolution"];
+  double distance = jparams["distance"];
+  double angle = jparams["angle"];
+  std::string output_las = jparams["output_las"];
+
+  // calculate bounding box
+  double x_min = pointcloud[0][0];
+  double y_min = pointcloud[0][1];
+  double x_max = pointcloud[0][0];
+  double y_max = pointcloud[0][1];
+  for (int i = 1; i < pointcloud.size(); i++) {
+      if (x_min > pointcloud[i][0]) x_min = pointcloud[i][0];
+      if (y_min > pointcloud[i][1]) y_min = pointcloud[i][1];
+      if (x_max < pointcloud[i][0]) x_max = pointcloud[i][0];
+      if (y_max < pointcloud[i][1]) y_max = pointcloud[i][1];
+  }
+  // calculate  ncols, nrows
+  int ncols = ceil((x_max - x_min) / resolution);
+  int nrows = ceil((y_max - y_min) / resolution);
+
+  for (int i = 0; i < nrows; i++)
+  {
+      for (int j = 0; j < ncols; j++)
+      {    
+          int min_elevation;
+          for (int index = 0; index < pointcloud.size(); index++)
+          {
+              std::priority_queue<Point> elevation;
+              if (pointcloud[index][0] >= x_min + j * resolution && pointcloud[index][0] < x_min + (j + 1) * resolution && 
+                  pointcloud[index][1] >= y_min + i * resolution && pointcloud[index][1] < y_min + (i + 1) * resolution);
+              {
+                  elevation.push(pointcloud[index]);
+              }
+
+          }
+      }
+  }
 
 
 

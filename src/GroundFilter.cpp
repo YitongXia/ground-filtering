@@ -72,32 +72,34 @@ void groundfilter_tin(const std::vector<Point>& pointcloud, const json& jparams)
         if (x_max < pointcloud[i][0]) x_max = pointcloud[i][0];
         if (y_max < pointcloud[i][1]) y_max = pointcloud[i][1];
     }
-    // resolution # ncols, nrows
-    //double resolution = jparams["resolution"];
+	    // resolution # ncols, nrows
+    double resolution = jparams["resolution"];
     int ncols = ceil((x_max - x_min) / resolution);
     int nrows = ceil((y_max - y_min) / resolution);
+    //build initial grid
+    std::vector<Point *> grid;
+    Point* array1[ncols][nrows];
 
-    // calculate the initial grid for the TIN algorithm
-    for (int i = 0; i < nrows; i++)
-    {
-        for (int j = 0; j < ncols; j++)
+    for (int i = 0; i < nrows*ncols; ++i) {
+        grid.push_back(nullptr);
+    }
+
+    for (int i = 0; i < pointcloud.size(); ++i) {
+        int row=floor(pointcloud[i].x()/resolution);
+        int col= floor(pointcloud[i].y()/resolution);
+        int index=col+row*nrows;
+        if (grid[index] == nullptr)
         {
-            std::priority_queue<Point> elevation;
-            for (int index = 0; index < pointcloud.size(); index++)
-            {
-                if (pointcloud[index][0] >= x_min + j * resolution && pointcloud[index][0] < x_min + (j + 1) * resolution &&
-                    pointcloud[index][1] >= y_min + i * resolution && pointcloud[index][1] < y_min + (i + 1) * resolution);
-                { elevation.push(& pointcloud[index]); }
-            }
-            start_grid.push_back(elevation.top());
+            * grid[index] = pointcloud[i];
+        }
+        else if(grid[index] != nullptr){
+            if (pointcloud[i].z() < grid[index]->z() )
+                * grid[index]=pointcloud[i];
         }
     }
-    // calculate each point
-    DT dt;
-    for (int i = 0; i < start_grid.size(); ++i) {
-        dt.insert(start_grid[i]);
+    for (int i = 0; i < grid.size(); ++i) {
+        std::cout<< grid.at(i)<< std::endl;
     }
-
 
 
 

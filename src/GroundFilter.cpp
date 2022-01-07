@@ -50,18 +50,9 @@ void groundfilter_tin(const std::vector<Point>& pointcloud, const json& jparams)
   double distance = jparams["distance"];
   double angle = jparams["angle"];
   std::string output_las = jparams["output_las"];
-	typedef CGAL::Projection_traits_xy_3<Kernel>  Gt;
-  typedef CGAL::Delaunay_triangulation_2<Gt> DT;
-
-  double resolution = jparams["resolution"];
-  double distance = jparams["distance"];
-  double angle = jparams["angle"];
-  std::string output_las = jparams["output_las"];
-
-
-    std::vector<Point> start_grid;
-
-    // extent
+	
+  std::vector<Point> start_grid;
+    
     double x_min = pointcloud[0][0];
     double y_min = pointcloud[0][1];
     double x_max = pointcloud[0][0];
@@ -72,34 +63,36 @@ void groundfilter_tin(const std::vector<Point>& pointcloud, const json& jparams)
         if (x_max < pointcloud[i][0]) x_max = pointcloud[i][0];
         if (y_max < pointcloud[i][1]) y_max = pointcloud[i][1];
     }
-	    // resolution # ncols, nrows
-    double resolution = jparams["resolution"];
+
+    //double resolution = jparams["resolution"];
     int ncols = ceil((x_max - x_min) / resolution);
     int nrows = ceil((y_max - y_min) / resolution);
+
     //build initial grid
-    std::vector<Point *> grid;
-    Point* array1[ncols][nrows];
+    std::vector<const Point *> grid;
 
     for (int i = 0; i < nrows*ncols; ++i) {
-        grid.push_back(nullptr);
+        grid.push_back(0);
     }
 
     for (int i = 0; i < pointcloud.size(); ++i) {
-        int row=floor(pointcloud[i].x()/resolution);
-        int col= floor(pointcloud[i].y()/resolution);
+
+        int row=floor((pointcloud[i].x()-x_min)/resolution);
+        int col= floor((pointcloud[i].y()-y_min)/resolution);
         int index=col+row*nrows;
-        if (grid[index] == nullptr)
-        {
-            * grid[index] = pointcloud[i];
-        }
-        else if(grid[index] != nullptr){
+        if (grid[index] == 0)
+            grid[index] = &pointcloud[i];
+        else if(grid[index] != 0){
             if (pointcloud[i].z() < grid[index]->z() )
-                * grid[index]=pointcloud[i];
+                grid[index]=& pointcloud[i];
         }
     }
+
+    DT initial_dt;
     for (int i = 0; i < grid.size(); ++i) {
-        std::cout<< grid.at(i)<< std::endl;
+        initial_dt.insert(*grid[i]);
     }
+  
 
 
 

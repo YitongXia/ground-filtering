@@ -24,21 +24,7 @@
 #include <CGAL/Search_traits_3.h>
 
 void groundfilter_tin(const std::vector<Point> &pointcloud, const json &jparams) {
-    /*
-      !!! TO BE COMPLETED !!!
 
-      Function that performs ground filtering using TIN refinement and writes the result to a new LAS file.
-
-      !!! You are free to subdivide the functionality of this function into several functions !!!
-
-      Inputs:
-        pointcloud: input point cloud (an Nx3 numpy array),
-        jparams: a dictionary jparams with all the parameters that are to be used in this function:
-          - resolution:    resolution (cellsize) for the initial grid that is computed as part of the ground filtering algorithm,
-          - distance:      distance threshold used in the ground filtering algorithm,
-          - angle:         angle threshold used in the ground filtering algorithm in degrees,
-          - output_las:    path to output .las file that contains your ground classification,
-    */
     typedef CGAL::Projection_traits_xy_3<Kernel> Gt;
     typedef CGAL::Delaunay_triangulation_2<Gt> DT;
     typedef CGAL::Simple_cartesian<Point> K;
@@ -59,48 +45,36 @@ void groundfilter_tin(const std::vector<Point> &pointcloud, const json &jparams)
         if (x_max < pointcloud[i][0]) x_max = pointcloud[i][0];
         if (y_max < pointcloud[i][1]) y_max = pointcloud[i][1];
     }
-
     //double resolution = jparams["resolution"];
     int ncols = ceil((x_max - x_min) / resolution);
     int nrows = ceil((y_max - y_min) / resolution);
-
     //build initial grid
     std::vector<const Point *> grid;
     std::vector<Point> init_tin;
     std::vector<int> class_labels;
     std::vector<Point> tin;
 
-    for (int i = 0; i < nrows * ncols; ++i) {
-        grid.push_back(0);
-    }
+    for (int i = 0; i < nrows * ncols; ++i) { grid.push_back(0); }
 
     for (int i = 0; i < pointcloud.size(); ++i) {
         int row = floor((pointcloud[i].x() - x_min) / resolution);
         int col = floor((pointcloud[i].y() - y_min) / resolution);
         int index = col + row * nrows;
-        if (grid[index] == 0)
-            grid[index] = &pointcloud[i];
+        if (grid[index] == 0) grid[index] = &pointcloud[i];
         else if (grid[index] != 0) {
-            if (pointcloud[i].z() < grid[index]->z())
-                grid[index] = &pointcloud[i];
+            if (pointcloud[i].z() < grid[index]->z()) grid[index] = &pointcloud[i];
         }
     }
-
-    for (int i = 0; i < grid.size(); ++i) {
-        init_tin.emplace_back(*grid[i]);
-    }
-
+    for (int i = 0; i < grid.size(); ++i) { init_tin.emplace_back(*grid[i]); }
     //construct DT
     DT dt;
     for (int i = 0; i < init_tin.size(); ++i) {
         dt.insert(init_tin[i]);
     }
-
+    init_tin.clear();
     //iterate every point in the point cloud data
     for (int i = 0; i < pointcloud.size(); ++i) {
-
         // if convex hull needed
-        dt.insert(pointcloud[i]);
         DT::Face_handle triangle = dt.locate(pointcloud[i]);
         DT::Vertex_handle v0 = triangle->vertex(0);
         DT::Vertex_handle v1 = triangle->vertex(1);
@@ -109,35 +83,26 @@ void groundfilter_tin(const std::vector<Point> &pointcloud, const json &jparams)
         double d1 = CGAL::squared_distance(v1->point(), pointcloud[i]);
         double d2 = CGAL::squared_distance(v2->point(), pointcloud[i]);
 
-        /*
-        std::cout<<"Pointcloud_i is " << pointcloud[i]<<std::endl;
-        std::cout<<"v0 is "<<v0->point() <<std::endl;
-        std::cout<<"v1 is "<<v1->point()  <<std::endl;
-        std::cout<<"v2 is "<<v2->point()  <<std::endl;
-         */
+        Kernel::Plane_3 plane_1 = Kernel::Plane_3(v0->point(), v1->point(), v2->point());
+        double h = CGAL::squared_distance(pointcloud[i], plane_1);
 
+        double temp_angle[3];
+        temp_angle[0] = asin(h / d0);
+        temp_angle[1] = asin(h / d1);
+        temp_angle[2] = asin(h / d2);
+        double max_angle = temp_angle[0];
 
-        Kernel::Plane_3 plane = Kernel::Plane_3(v0->point(), v1->point(), v2->point());
-        double h = CGAL::squared_distance(pointcloud[i], plane);
-        if (h == 0) {
+        for (int j = 0; j < 3; j++) {
+            if (temp_angle[j] > max_angle) { max_angle = temp_angle[j]; }
+        }
+        if (h <= distance && max_angle <= angle) {
             tin.emplace_back(pointcloud[i]);
             class_labels.emplace_back(1);
-        } else if (h != 0) {
-            double temp_angle[3];
-            temp_angle[0] = asin(h / d0);
-            temp_angle[1] = asin(h / d1);
-            temp_angle[2] = asin(h / d2);
-            double max_angle = temp_angle[0];
-            for (int j = 0; j < 3; j++) {
-                if (temp_angle[j] > max_angle) { max_angle = temp_angle[j]; }
-            }
-            if (h <= distance && max_angle <= angle) {
-                tin.emplace_back(pointcloud[i]);
-                class_labels.emplace_back(1);
-            } else {
-                class_labels.emplace_back(2);
-                tin.emplace_back(pointcloud[i]);
-            }
+            dt.insert(pointcloud[i]);
+
+        } else {
+            tin.emplace_back(pointcloud[i]);
+            class_labels.emplace_back(2);
         }
     }
     std::cout << "the number of point " << tin.size() << std::endl;

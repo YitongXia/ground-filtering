@@ -23,36 +23,18 @@
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 #include <CGAL/Search_traits_3.h>
 
+void groundfilter_tin(const std::vector<Point> &pointcloud, const json &jparams) {
 
-void TIN(const std::vector<Point> & pointcloud,const json& jparams){
+    typedef CGAL::Projection_traits_xy_3<Kernel> Gt;
+    typedef CGAL::Delaunay_triangulation_2<Gt> DT;
+    typedef CGAL::Simple_cartesian<Point> K;
+    typedef K::Point_3 Point_d;
 
-}
-void groundfilter_tin(const std::vector<Point>& pointcloud, const json& jparams) {
-  /*
-    !!! TO BE COMPLETED !!!
-      
-    Function that performs ground filtering using TIN refinement and writes the result to a new LAS file.
+    double resolution = jparams["resolution"];
+    double distance = jparams["distance"];
+    double angle = jparams["angle"];
+    std::string output_las = jparams["output_las"];
 
-    !!! You are free to subdivide the functionality of this function into several functions !!!
-      
-    Inputs:
-      pointcloud: input point cloud (an Nx3 numpy array),
-      jparams: a dictionary jparams with all the parameters that are to be used in this function:
-        - resolution:    resolution (cellsize) for the initial grid that is computed as part of the ground filtering algorithm,
-        - distance:      distance threshold used in the ground filtering algorithm,
-        - angle:         angle threshold used in the ground filtering algorithm in degrees,
-        - output_las:    path to output .las file that contains your ground classification,
-  */
-  typedef CGAL::Projection_traits_xy_3<Kernel>  Gt;
-  typedef CGAL::Delaunay_triangulation_2<Gt> DT;
-
-  double resolution = jparams["resolution"];
-  double distance = jparams["distance"];
-  double angle = jparams["angle"];
-  std::string output_las = jparams["output_las"];
-	
-  std::vector<Point> start_grid;
-    
     double x_min = pointcloud[0][0];
     double y_min = pointcloud[0][1];
     double x_max = pointcloud[0][0];
@@ -71,58 +53,55 @@ void groundfilter_tin(const std::vector<Point>& pointcloud, const json& jparams)
     //build initial grid
     std::vector<const Point *> grid;
 
-    for (int i = 0; i < nrows*ncols; ++i) {
-        grid.push_back(0);
+    for (int i = 0; i < nrows * ncols; ++i) grid.push_back(0);
+    for (int i = 0; i < pointcloud.size(); ++i) {
+        int row = floor((pointcloud[i].x() - x_min) / resolution);
+        int col = floor((pointcloud[i].y() - y_min) / resolution);
+        int index = col + row * nrows;
+        if (grid[index] == 0)
+            grid[index] = &pointcloud[i];
+        else if (grid[index] != 0) {
+            if (pointcloud[i].z() < grid[index]->z())
+                grid[index] = &pointcloud[i];
+        }
+    }
+    std::vector<Point> init_tin;
+    for (int i = 0; i < grid.size(); ++i) {
+        init_tin.emplace_back(*grid[i]);
+    }
+	
+    //construct DT
+    DT dt;
+    for (int i = 0; i < init_tin.size(); ++i) {
+        dt.insert(init_tin[i]);
     }
 
     for (int i = 0; i < pointcloud.size(); ++i) {
+        dt.insert(pointcloud[i]);
+        DT::Face_handle triangle = dt.locate(pointcloud[i]);
+        DT::Vertex_handle v0 = triangle->vertex(0);
+        DT::Vertex_handle v1 = triangle->vertex(1);
+        DT::Vertex_handle v2 = triangle->vertex(2);
+        double d0 = CGAL::squared_distance(v0->point(), pointcloud[i]);
+        double d1 = CGAL::squared_distance(v1->point(), pointcloud[i]);
+        double d2 = CGAL::squared_distance(v2->point(), pointcloud[i]);
 
-        int row=floor((pointcloud[i].x()-x_min)/resolution);
-        int col= floor((pointcloud[i].y()-y_min)/resolution);
-        int index=col+row*nrows;
-        if (grid[index] == 0)
-            grid[index] = &pointcloud[i];
-        else if(grid[index] != 0){
-            if (pointcloud[i].z() < grid[index]->z() )
-                grid[index]=& pointcloud[i];
+        Kernel::Plane_3 plane = Kernel::Plane_3(v0->point(), v1->point(), v2->point());
+        double h = CGAL::squared_distance(pointcloud[i], plane);
+        double temp_angle[3];
+        temp_angle[0] = asin(h / d0);
+        temp_angle[1] = asin(h / d1);
+        temp_angle[2] == asin(h / d2);
+        double max_angle = temp_angle[0];
+        for (int j = 0; j < sizeof(angle); ++j) {
+            if (temp_angle[i] > max_angle) max_angle = temp_angle[i];
         }
+        if (h <= distance && max_angle <= angle) {
+            //pass
+        } else { dt.delete_vertex(pointcloud[i]); }
+
     }
-
-    DT initial_dt;
-    for (int i = 0; i < grid.size(); ++i) {
-        initial_dt.insert(*grid[i]);
-    }
-  
-
-
-
-  //-- TIP CGAL triangulation -> https://doc.cgal.org/latest/Triangulation_2/index.html
-  //-- Insert points in a triangulation: [https://doc.cgal.org/latest/Triangulation_2/classCGAL_1_1Triangulation__2.html#a1025cd7e7226ccb44d82f0fb1d63ad4e]
-  // DT dt;
-  // dt.insert(Point(0,0,0));
-  // dt.insert(Point(10,0,0));
-  // dt.insert(Point(0,10,0));
-  //-- Find triangle that intersects a given point: [https://doc.cgal.org/latest/Triangulation_2/classCGAL_1_1Triangulation__2.html#a940567120751e7864c7b345eaf756642]
-  // DT::Face_handle triangle = dt.locate(Point(3,3,0));
-  //-- get the 3 vertices of the triangle: 
-  // DT::Vertex_handle v0 = triangle->vertex(0);
-  // DT::Vertex_handle v1 = triangle->vertex(1);
-  // DT::Vertex_handle v2 = triangle->vertex(2);
-  // get the coordinates of the three vertices:
-  // std::cout << "v0 has the coordinates ( " << v0->point().x() << "  " << v0->point().y() << " " << v0->point().z() << " )" << std::endl;
-  // std::cout << "v1 has the coordinates ( " << v1->point().x() << "  " << v1->point().y() << " " << v1->point().z() << " )" << std::endl;
-  // std::cout << "v2 has the coordinates ( " << v2->point().x() << "  " << v2->point().y() << " " << v2->point().z() << " )" << std::endl;
-
-  //-- TIP CGAL compute squared distance between two points: [https://doc.cgal.org/latest/Kernel_23/group__squared__distance__grp.html#ga1ff73525660a052564d33fbdd61a4f71]
-  // std::cout << "the squared distance between v0 and v1 is: " << CGAL::squared_distance(v0->point(), v1->point()) << std::endl;
-  
-  //-- TIP
-  //-- write the results to a new LAS file
-  // std::vector<int> class_labels;
-  // write_lasfile(jparams["output_las"], pointcloud, class_labels);
 }
-
-
 
 void groundfilter_csf(const std::vector<Point>& pointcloud, const json& jparams) {
   /*

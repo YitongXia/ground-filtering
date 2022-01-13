@@ -36,6 +36,10 @@
 #include "Cloth.h"
 #include <cmath>
 
+// -- tin Dependencies
+#include <queue>
+#include <CGAL/Plane_3.h>
+#include <CGAL/convex_hull_2.h>
 
 void groundfilter_tin(const std::vector<Point> &pointcloud, const json &jparams) {
 

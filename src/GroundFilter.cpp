@@ -41,14 +41,24 @@ void groundfilter_tin(const std::vector<Point> &pointcloud, const json &jparams)
 
     typedef CGAL::Projection_traits_xy_3<Kernel> Gt;
     typedef CGAL::Delaunay_triangulation_2<Gt> DT;
-    typedef CGAL::Simple_cartesian<Point> K;
-    typedef K::Point_3 Point_d;
+	
+    //build initial grid
+    std::vector<const Point *> grid;
+    std::vector<Point> init_tin;
+    std::vector<int> class_labels;
+    std::vector<Point> tin;
 
     double resolution = jparams["resolution"];
     double distance = jparams["distance"];
-    double angle = jparams["angle"];
+    double initial_angle = jparams["angle"];
     std::string output_las = jparams["output_las"];
 
+    // convert angle to radian
+    double angle = (initial_angle * M_PI) / 180;
+    // for counting the number of ground point and non ground point
+    int ground_point = 0;
+    int non_ground_point = 0;
+    // calculate the bounding box to create the grid
     double x_min = pointcloud[0][0];
     double y_min = pointcloud[0][1];
     double x_max = pointcloud[0][0];
@@ -59,16 +69,13 @@ void groundfilter_tin(const std::vector<Point> &pointcloud, const json &jparams)
         if (x_max < pointcloud[i][0]) x_max = pointcloud[i][0];
         if (y_max < pointcloud[i][1]) y_max = pointcloud[i][1];
     }
-    //double resolution = jparams["resolution"];
+    // calculate the row and colum of the grid
     int ncols = ceil((x_max - x_min) / resolution);
     int nrows = ceil((y_max - y_min) / resolution);
-    //build initial grid
-    std::vector<const Point *> grid;
-    std::vector<Point> init_tin;
-    std::vector<int> class_labels;
-    std::vector<Point> tin;
+    
 
-    for (int i = 0; i < nrows * ncols; ++i) { grid.push_back(0); }
+    //initialize pointer to store
+    for (int i = 0; i < nrows * ncols; ++i) { grid.push_back(nullptr); }
 
     for (int i = 0; i < pointcloud.size(); ++i) {
         int row = floor((pointcloud[i].x() - x_min) / resolution);
@@ -79,16 +86,25 @@ void groundfilter_tin(const std::vector<Point> &pointcloud, const json &jparams)
             if (pointcloud[i].z() < grid[index]->z()) grid[index] = &pointcloud[i];
         }
     }
-    for (int i = 0; i < grid.size(); ++i) { init_tin.emplace_back(*grid[i]); }
-    //construct DT
+    // insert initial ground point and construct DT
     DT dt;
-    for (int i = 0; i < init_tin.size(); ++i) {
-        dt.insert(init_tin[i]);
+    for (int i = 0; i < grid.size(); ++i) {
+        if (grid[i] == nullptr) continue;
+        else dt.insert(*grid[i]);
     }
-    init_tin.clear();
-    //iterate every point in the point cloud data
+    //calcuate the convex hull, and add the convex hull point into the DT
+    std::vector<Point> convexhull_point;
+    CGAL::convex_hull_2(pointcloud.begin(), pointcloud.end(), std::back_inserter(convexhull_point), Gt());
+    //modify the z value
+    for (int i = 0; i < convexhull_point.size(); i++) {
+        int row = floor((convexhull_point[i].x() - x_min) / resolution);
+        int col = floor((convexhull_point[i].y() - y_min) / resolution);
+        double temp_z = grid[col + row * nrows]->z();
+        Point temp = Point(convexhull_point[i][0], convexhull_point[i][1], temp_z);
+        dt.insert(temp);
+    }
+    //  iterate every point in the point cloud data
     for (int i = 0; i < pointcloud.size(); ++i) {
-        // if convex hull needed
         DT::Face_handle triangle = dt.locate(pointcloud[i]);
         DT::Vertex_handle v0 = triangle->vertex(0);
         DT::Vertex_handle v1 = triangle->vertex(1);
@@ -113,15 +129,17 @@ void groundfilter_tin(const std::vector<Point> &pointcloud, const json &jparams)
             tin.emplace_back(pointcloud[i]);
             class_labels.emplace_back(1);
             dt.insert(pointcloud[i]);
-
+            ground_point++;
         } else {
             tin.emplace_back(pointcloud[i]);
             class_labels.emplace_back(2);
+            non_ground_point++;
         }
     }
-    std::cout << "the number of point " << tin.size() << std::endl;
-    std::cout << "the number of class labels " << class_labels.size() << std::endl;
     write_lasfile(jparams["output_las"], tin, class_labels);
+    std::cout << "the number of ground point: " << ground_point << std::endl;
+    std::cout << "there number of non ground point: " << non_ground_point << std::endl;
+    std::cout << "=== TIN refinement groundfilter has finished===\n" << tin.size() << std::endl;
 }
 
 
